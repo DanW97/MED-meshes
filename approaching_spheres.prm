@@ -1,0 +1,249 @@
+#=================================================================================================
+# Simulating two spheres approaching at constant velocity up to the point of contact, measuring
+# the drag forces and torques acting thereon.
+#
+# The spheres' Reynolds number can be modified by changing the kinematic viscosity of the fluid
+# (physical properties section); to fine-tune their individual Reynolds numbers change their radii
+# and velocities (nitsche solid section).
+#
+# Author:   Andrei Leonard Nicusan <a.l.nicusan@bham.ac.uk>
+# Date:     28.12.2021
+# License:  MIT
+#=================================================================================================
+
+
+#-------------------------------------------------------------------------------------------------
+# Simulation and IO Control
+#-------------------------------------------------------------------------------------------------
+subsection simulation control
+    set method                          = bdf2
+    set bdf startup method              = multiple step bdf
+
+    set time step                       = 0.0001                # Time step
+    set time end                        = 18.17551048773302 ###
+    set adapt                           = true
+    set max cfl                         = 0.8
+    set adaptative time step scaling    = 1.1
+
+    set output name                     = approaching_spheres   # Prefix for VTU outputs
+    set output path                     = ./results/            # Output directory
+    set output boundaries               = true                  # Output domain boundaries
+    set output frequency                = 1                     # Frequency of simulation output
+    set subdivision                     = 1                     # Output mesh subdivision
+end
+
+
+#-------------------------------------------------------------------------------------------------
+# Simulation Checkpointing
+#-------------------------------------------------------------------------------------------------
+subsection restart
+    set checkpoint                      = true                  # Enable checkpointing
+    set restart                         = false                 # Start from previous checkpoint
+    set filename                        = restart
+    set frequency                       = 10
+end
+
+
+#-------------------------------------------------------------------------------------------------
+# Force
+#-------------------------------------------------------------------------------------------------
+subsection forces
+    set verbosity                       = verbose
+    set calculate force                 = true
+    set force name                      = force
+    set calculate torque                = true
+    set torque name                     = torque
+
+    set output precision                = 15
+    set calculation frequency           = 1
+    set output frequency                = 1
+end
+
+
+#-------------------------------------------------------------------------------------------------
+# FEM
+#-------------------------------------------------------------------------------------------------
+subsection FEM
+    set velocity order                  = 1
+    set pressure order                  = 1
+    set qmapping all                    = false
+end
+
+
+#-------------------------------------------------------------------------------------------------
+# Physical Properties
+#-------------------------------------------------------------------------------------------------
+subsection physical properties
+    subsection fluid 0
+        set kinematic viscosity = 2.0 ###
+    end
+end
+
+
+#-------------------------------------------------------------------------------------------------
+# Timer
+#-------------------------------------------------------------------------------------------------
+subsection timer
+    set type                            = iteration
+end
+
+
+#-------------------------------------------------------------------------------------------------
+# Initial condition
+#-------------------------------------------------------------------------------------------------
+subsection initial conditions
+    set type = nodal
+    subsection uvwp
+        set Function expression         = 0;0;0;0
+    end
+end
+
+
+#-------------------------------------------------------------------------------------------------
+# Mesh
+#-------------------------------------------------------------------------------------------------
+subsection mesh
+    # Automatically generate mesh using deal.II's functions:
+    # https://www.dealii.org/current/doxygen/deal.II/namespaceGridGenerator.html
+    set type                            = dealii
+    set grid type                       = subdivided_cylinder
+    set grid arguments                  = 4 : 22.505149978319903 : 31.592905222186413 ###
+    set initial refinement              = 5
+end
+
+
+#-------------------------------------------------------------------------------------------------
+# Boundary Conditions
+#-------------------------------------------------------------------------------------------------
+subsection boundary conditions
+    # Cylinder hull, xmin, xmax = boundary ID 0, 1, 2
+    set number                  = 1
+
+    subsection bc 0
+        set id                  = 0
+        set type                = slip
+    end
+end
+
+
+#-------------------------------------------------------------------------------------------------
+# Immersed Boundary Particles
+#-------------------------------------------------------------------------------------------------
+subsection nitsche
+    set verbosity                       = verbose
+
+    set number of solids                = 2
+
+    subsection nitsche solid 0
+        set beta                        = 50
+        set enable particles motion     = true
+        set particles sub iterations    = 5
+        set number quadrature points    = 4
+        set stop if particles lost      = true
+
+        set calculate force on solid    = true
+        set solid force name            = solid_force0
+        set calculate torque on solid   = true
+        set solid torque name           = solid_torque0
+
+        subsection mesh
+            set type                    = dealii
+            set grid type               = hyper_ball
+            set grid arguments          = -9.08775524386651,0.0,0.0 : 0.5 : true ###
+            set initial refinement      = 4
+            set simplex                 = false
+        end
+
+        subsection solid velocity
+            set Function expression     = 1;0;0
+        end
+    end
+
+
+    subsection nitsche solid 1
+        set beta                        = 50
+        set enable particles motion     = true
+        set particles sub iterations    = 5
+        set number quadrature points    = 4
+        set stop if particles lost      = true
+
+        set calculate force on solid    = true
+        set solid force name            = solid_force1
+        set calculate torque on solid   = true
+        set solid torque name           = solid_torque1
+
+        subsection mesh
+            set type                    = dealii
+            set grid type               = hyper_ball
+            set grid arguments          = 9.08775524386651,0.0,0.0 : 0.5 : true ###
+            set initial refinement      = 4
+            set simplex                 = false
+        end
+
+        subsection solid velocity
+            set Function expression     = -1;0;0
+        end
+    end
+end
+
+
+#-------------------------------------------------------------------------------------------------
+# Mesh Adaptation Control
+#-------------------------------------------------------------------------------------------------
+subsection mesh adaptation
+    set fraction coarsening     = 0.01
+    set fraction refinement     = 0.01
+
+    set fraction type           = number
+    set frequency               = 1
+    set max number elements     = 2500000
+    set max refinement level    = 8
+    set min refinement level    = 4
+
+    set type                    = kelly
+    set variable                = pressure
+end
+
+
+#-------------------------------------------------------------------------------------------------
+# Non-Linear Solver Control
+#-------------------------------------------------------------------------------------------------
+subsection non-linear solver
+    set verbosity               = verbose
+    set solver                  = newton
+    set max iterations          = 10
+    set tolerance               = 1e-5
+end
+
+
+#-------------------------------------------------------------------------------------------------
+# Linear Solver Control
+#-------------------------------------------------------------------------------------------------
+subsection linear solver
+    set verbosity                                   = verbose
+
+    # GMRES linear solver, good for < 1,000,000 elements
+    set method                                      = gmres
+    set max iters                                   = 5000
+    set max krylov vectors                          = 1000
+    set relative residual                           = 1e-3
+    set minimum residual                            = 1e-10
+    set ilu preconditioner fill                     = 1
+    set ilu preconditioner absolute tolerance       = 1e-12
+    set ilu preconditioner relative tolerance       = 1.00
+
+    # AMG linear solver, more efficient for > 1,000,000 elements
+    # set method                                      = amg
+    # set max iters                                   = 1000
+    # set max krylov vectors                          = 1000
+    # set relative residual                           = 1e-3
+    # set minimum residual                            = 1e-10
+    # set amg preconditioner ilu fill                 = 0
+    # set amg preconditioner ilu absolute tolerance   = 1e-20
+    # set amg preconditioner ilu relative tolerance   = 1.00
+    # set amg aggregation threshold                   = 1e-12
+    # set amg n cycles                                = 1
+    # set amg w cycles                                = false
+    # set amg smoother sweeps                         = 2
+    # set amg smoother overlap                        = 1
+end
