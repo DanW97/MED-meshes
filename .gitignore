@@ -1,7 +1,7 @@
-#lethefiles/*
-#packingsims/*
-#results/*
-#vtk/*
+lethefiles
+packingsims
+results
+vtk
 packed-bed2.zip
 packed-bed2
 
