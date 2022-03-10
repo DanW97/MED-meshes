@@ -4,4 +4,6 @@ results/
 vtk/
 packed-bed2.zip
 
+cylinder.geo
+cylinder.msh
 log.liggghts
