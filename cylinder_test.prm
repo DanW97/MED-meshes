@@ -67,6 +67,15 @@ subsection forces
     set output frequency                = 1
 end
 
+#-------------------------------------------------------------------------------------------------
+# Initial condition
+#-------------------------------------------------------------------------------------------------
+subsection initial conditions
+    set type = nodal
+    subsection uvwp
+        set Function expression         = 0;0;0.1;0
+    end
+end
 
 #-------------------------------------------------------------------------------------------------
 # FEM
@@ -173,28 +182,22 @@ end
 subsection boundary conditions
     # Box hull, xmin, xmax, ymin, ymax, zmin, zmax = boundary ID 0, 1, 2, 3, 4, 5
     set number                  = 2
-    subsection bc 0 # periodic z walls
-        set id                  = 1
-        set type                = periodic
-        set periodic_id         = 2
-        set periodic_direction  = 0
-    end
+    subsection bc 0 #Inlet
+      set id			 = 2
+      set type              = function
+      subsection u
+          set Function expression = 0
+      end
+      subsection v
+          set Function expression = 0
+      end
+      subsection w
+          set Function expression = 0.1
+      end
+  end
 
     subsection bc 1 # solid walls
-        set id                  = 2
+        set id                  = 1
         set type                = noslip
     end
 end
-
-#-------------------------------------------------------------------------------------------------
-# Flow Control - volumetric flow rate modified to achieve desired Re
-#-------------------------------------------------------------------------------------------------
-subsection flow control
-    set enable                  = true 
-    set boundary_id             = 0
-    set volumetric flow rate    = 0.0000076968
-    set flow direction          = 0
-    set initial beta            = 7.66
-    set verbosity               = verbose
-end
-
