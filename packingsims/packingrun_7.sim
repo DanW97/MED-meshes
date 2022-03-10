@@ -1,0 +1,28 @@
+#=================================================================================================
+# LIGGGHTS script to pack particles with volume fraction target 0.04625
+#
+# Author:   Daniel Weston <dtw545@student.bham.ac.uk>
+# Date:     03.3.2022
+# License:  MIT
+#=================================================================================================
+
+
+atom_style      granular
+atom_modify     map array sort 0 0.0
+newton          off
+boundary        f f f 
+communicate     single vel yes
+units           si 
+region domain block -0.005 0.005 -0.005 0.005 -0.005 0.005 units box
+create_box 1 domain
+neighbor 0.000458 bin
+fix pts0 all particletemplate/sphere 10007 atom_type 1 density constant 1 radius constant 0.000458
+fix pts1 all particletemplate/sphere 10009 atom_type 1 density constant 1 radius constant 0.00052
+fix pts2 all particletemplate/sphere 10037 atom_type 1 density constant 1 radius constant 0.000591
+fix pts3 all particletemplate/sphere 10039 atom_type 1 density constant 1 radius constant 0.000672
+fix pts4 all particletemplate/sphere 10061 atom_type 1 density constant 1 radius constant 0.000763
+fix pts5 all particletemplate/sphere 10067 atom_type 1 density constant 1 radius constant 0.000867
+fix pts6 all particletemplate/sphere 10069 atom_type 1 density constant 1 radius constant 0.000985
+fix pdd1 all particledistribution/discrete 10079 7 pts0 0.0002 pts1 0.0147 pts2 0.1934 pts3 0.6517 pts4 0.1322 pts5 0.0077 pts6 0.0001 
+fix ins all insert/pack seed 10091 distributiontemplate pdd1 insert_every once overlapcheck yes all_in yes region domain volumefraction_region 0.04625 ntry_mc 10000000
+run 2
