@@ -1,0 +1,55 @@
+import gmsh
+import numpy as np
+
+# Global constants - these form the "dim" section of the dimtag parlance used in gmsh
+POINT = 0
+CURVE = 1
+SURFACE = 2
+VOLUME = 3
+
+# using parameterised functions from: https://en.wikipedia.org/wiki/Superquadrics
+# auxilliary functions
+
+
+def f(w, m):
+    return np.sign(np.sin(w))*np.power(np.abs(np.sin(w)), m)
+
+
+def g(w, m):
+    return np.sign(np.cos(w))*np.power(np.abs(np.cos(w)), m)
+
+# parameterised functions that return make_points along a superquadric
+# -pi/2<=v<=pi/2, -pi<=u<=pi
+
+
+def xpts(u, v, scaleX, exponentX):
+    return scaleX*g(v, 2/exponentX)*g(u, 2/exponentX)
+
+
+def ypts(u, v, scaleY, exponentY):
+    return scaleY*g(v, 2/exponentY)*f(u, 2/exponentY)
+
+
+def zpts(v, scaleZ, exponentZ):
+    return scaleZ*f(v, 2/exponentZ)
+
+
+class SuperQuadric:
+    def __init__(self, indices=[8, 8, 8], scale=[1, 1, 1],
+                 filename='quad', rotation=[0, 0, 0]) -> None:
+        # checking
+        assert len(scale) == 3
+        assert len(rotation) == 3
+        assert len(indices) == 3
+        if sum(np.array(rotation) != 0) > 0:
+            self.rotatable = True
+        else:
+            self.rotatable = False
+        self.scale = scale
+        self.indices = indices
+        self.rotation = rotation
+        self.umin = np.pi/2
+        self.umax = np.pi
+        self.vmin = 0
+        self.vmax = np.pi/2
+        self.filename = filename
