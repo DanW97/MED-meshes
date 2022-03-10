@@ -28,7 +28,7 @@ subsection simulation control
     set bdf startup method              = multiple step bdf
 
     set time step                       = 0.0001                # Time step
-    set time end                        = 18.17551048773302 ###
+    set time end                        = 10
     set adapt                           = true
     set max cfl                         = 0.8
     set adaptative time step scaling    = 1.1
@@ -103,9 +103,9 @@ subsection mesh
     # Automatically generate mesh using deal.II's functions:
     # https://www.dealii.org/current/doxygen/deal.II/namespaceGridGenerator.html
     set type                            = dealii
-    set grid type                       = subdivided_hyper_rectangle
-    set grid arguments                  = 4, 4, 4 : -0.5, -0.5, -0.5 : 0.5, 0.5, 0.5 : true ###
-    set initial refinement              = 5
+    set grid type                       = hyper_rectangle
+    set grid arguments                  = -0.5, -0.5, -0.5 : 0.5, 0.5, 0.5 : true ###
+    set initial refinement              = 7
 end
 
 #-------------------------------------------------------------------------------------------------
@@ -118,7 +118,7 @@ subsection mesh adaptation
     set fraction type           = number
     set frequency               = 1
     set max number elements     = 2500000
-    set max refinement level    = 8
+    set max refinement level    = 7
     set min refinement level    = 4
 
     set type                    = kelly
@@ -225,8 +225,8 @@ subsection particles
     set ib particles pvd file                   = spheres_data
 
     set initial refinement                      = 1
-    set refine mesh inside radius factor        = 0
-    set refine mesh outside radius factor       = 2
+    set refine mesh inside radius factor        = 0.8
+    set refine mesh outside radius factor       = 1.2
 
     set integrate motion                        = false
     set assemble Navier-Stokes inside particles = false

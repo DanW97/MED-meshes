@@ -19,7 +19,6 @@ import numpy as np
 from scipy.stats import qmc
 import os
 from sympy import nextprime
-from math import ceil
 
 class PackingGenerator():
     """Generate packings of particles with given volume fraction and PSD"""
@@ -121,7 +120,7 @@ class PackingGenerator():
             header[15] = f"# Volume fraction = {real_phi}, Reynolds number = {self.setpoints[suffix,1]}\n"
             # make box dimensions 10x the packed cube
             L = max([self.Vx, self.Vy, self.Vz])
-            header[106] = f"    set grid arguments                  = 4, 4, 4 : {-2*self.Vx},{-2*self.Vy},{-2*self.Vz} : {2*self.Vx},{2*self.Vy},{2*self.Vz} : true\n"
+            header[106] = f"    set grid arguments                  = {-2*self.Vx},{-2*self.Vy},{-2*self.Vz} : {2*self.Vx},{2*self.Vy},{2*self.Vz} : true\n"
             #calculate inlet velocity
             cross_section = self.Vy*self.Vz 
             reynolds_number = self.setpoints[suffix,1]
@@ -142,16 +141,16 @@ class PackingGenerator():
                 particle_write("            set Function expression             = 0;0;0\n")
                 particle_write("        end\n")
                 particle_write(f"        set radius                              = {radius}\n")
-                particle_write("    end\n")
+                particle_write("    end\n\n")
 
             with open(self.sim_folder + os.sep + self.sim_filename+f"_{suffix}.prm", "w") as sim:
                 sim.writelines(header)
-                sim.writelines(f"    set number of particles                     = {np.shape(pos)[0]}\n")
+                sim.writelines(f"set number of particles                     = {np.shape(pos)[0]}\n")
                 sim.writelines(particle_info)
                 sim.writelines("end")
 
 
-a = PackingGenerator()
+a = PackingGenerator(m=5)
 a.psd()
 a.generate_run_parameters()
 a.generate_packing_scripts(clean=False)
