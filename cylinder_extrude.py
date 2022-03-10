@@ -19,18 +19,22 @@ class Cylinder:
     height : int, optional
             Cylinder height in mm, by default 2000
     radial_npts : int, optional
-            Number of points on transfinite curves in x and y, by default 20
+            Number of points on transfinite curves in x and y, by default 5
     height_npts : int, optional
             Number of points on transfinite curves in z, by default 20
     filepath : str, optional
             Path to save .geo and .msh files - extensions added automatically by this class, by default "cylinder"
     radial_coef : float , optional
-            Geometric progression coefficient for transfinite lines in x and y, by default 1.
+            Geometric progression coefficient for transfinite curves defining circle segments in x and y, by default 1.
     height_coef : float , optional
             Geometric progression coefficient for transfinite lines in z, by default 1.
+    diamond_coef : float , optional
+            Geometric progression coefficient for transfinite curves defining center diamond in x and y, by default 1.
+    diamond_ratio : float , optional
+            Ratio of diamond half-length (half the diagonal length of a square) to cylinder radius
     """
 
-    def __init__(self, radius=49, height=2000, radial_npts=5, height_npts=20, diamond_npts=5, filepath="cylinder", radial_coef=1.0, height_coef=1.0, diamond_coef=1.0, diamond_ratio=0.5) -> None:
+    def __init__(self, radius=49, height=2000, radial_npts=5, height_npts=20, filepath="cylinder", radial_coef=1.0, height_coef=1.0, diamond_coef=1.0, diamond_ratio=0.5) -> None:
         """Class constructor for Cylinder
 
         Parameters
@@ -40,11 +44,9 @@ class Cylinder:
         height : int, optional
                 Cylinder height in mm, by default 2000
         radial_npts : int, optional
-                Number of points on transfinite curves defining circle segments in x and y, by default 5
+                Number of points on transfinite curves in x and y, by default 5
         height_npts : int, optional
                 Number of points on transfinite curves in z, by default 20
-        diamond_npts : int, optional
-                Number of points on transfinite curves defining center diamond in x and y, by default 5
         filepath : str, optional
                 Path to save .geo and .msh files - extensions added automatically by this class, by default "cylinder"
         radial_coef : float , optional
@@ -62,7 +64,6 @@ class Cylinder:
         self.height = height/1000
         self.radial_npts = radial_npts
         self.height_npts = height_npts
-        self.diamond_npts = diamond_npts
         self.filepath = filepath
         self.radial_coef = radial_coef
         self.height_coef = height_coef
@@ -173,10 +174,10 @@ class Cylinder:
         msh.setTransfiniteSurface(face_WN_base)
         msh.setRecombine(SURFACE, face_WN_base)
         # Center diamond
-        msh.setTransfiniteCurve(diamond_line_NE, self.diamond_npts, coef=self.diamond_coef)
-        msh.setTransfiniteCurve(diamond_line_ES, self.diamond_npts, coef=self.diamond_coef)
-        msh.setTransfiniteCurve(diamond_line_SW, self.diamond_npts, coef=self.diamond_coef)
-        msh.setTransfiniteCurve(diamond_line_WN, self.diamond_npts, coef=self.diamond_coef)
+        msh.setTransfiniteCurve(diamond_line_NE, self.radial_npts, coef=self.diamond_coef)
+        msh.setTransfiniteCurve(diamond_line_ES, self.radial_npts, coef=self.diamond_coef)
+        msh.setTransfiniteCurve(diamond_line_SW, self.radial_npts, coef=self.diamond_coef)
+        msh.setTransfiniteCurve(diamond_line_WN, self.radial_npts, coef=self.diamond_coef)
         msh.setTransfiniteSurface(center_face_base)
         msh.setRecombine(SURFACE, center_face_base)
         # Define physical groups for lethe
@@ -218,6 +219,6 @@ class Cylinder:
             gmsh.fltk.run()
 
 
-cyl = Cylinder(height_npts=30, height=100)
+cyl = Cylinder(height_npts=30, radial_npts=7)
 cyl.draw()
 cyl.view()
