@@ -3,6 +3,7 @@ packingsims/
 results/
 vtk/
 packed-bed2.zip
+packed-bed2
 
 cylinder.geo
 cylinder.msh

@@ -103,8 +103,8 @@ subsection mesh
     # Automatically generate mesh using deal.II's functions:
     # https://www.dealii.org/current/doxygen/deal.II/namespaceGridGenerator.html
     set type                            = dealii
-    set grid type                       = subdivided_hyper_cube
-    set grid arguments                  = 4 : -0.5 : 0.5 : true ###
+    set grid type                       = subdivided_hyper_rectangle
+    set grid arguments                  = 4, 4, 4 : -0.5, -0.5, -0.5 : 0.5, 0.5, 0.5 : true ###
     set initial refinement              = 5
 end
 
@@ -170,16 +170,33 @@ subsection linear solver
 end
 
 #-------------------------------------------------------------------------------------------------
+# Initial condition
+#-------------------------------------------------------------------------------------------------
+subsection initial conditions
+    set type = nodal
+    subsection uvwp
+        set Function expression         = 0.1;0;0;0
+    end
+end
+
+#-------------------------------------------------------------------------------------------------
 # Boundary Conditions
 #-------------------------------------------------------------------------------------------------
 subsection boundary conditions
     # Box hull, xmin, xmax, ymin, ymax, zmin, zmax = boundary ID 0, 1, 2, 3, 4, 5
     set number                  = 3
-    subsection bc 0 # periodic x walls
+    subsection bc 0 # inlet
         set id                  = 0
-        set type                = periodic
-        set periodic_id         = 1
-        set periodic_direction  = 0
+        set type                = function
+        subsection u
+          set Function expression = 0.1
+        end
+        subsection v
+            set Function expression = 0
+        end
+        subsection w
+            set Function expression = 0
+        end
     end
 
     subsection bc 1 # periodic y walls
@@ -197,15 +214,19 @@ subsection boundary conditions
     end
 end
 
-#-------------------------------------------------------------------------------------------------
-# Flow Control - volumetric flow rate modified to achieve desired Re
-#-------------------------------------------------------------------------------------------------
-subsection flow control
-    set enable                  = true 
-    set boundary id             = 0
-    set volumetric flow rate    = 1
-    set flow direction          = 0
-    set initial beta            = 7.66
-    set verbosity               = verbose
-end
+subsection particles
+    set stencil order                           = 6                     # Sphere interpolation
+    set length ratio                            = 4                     # 2 * Q * aspect ratio
+    # set particle nonlinear tolerance            = 1e-3
+    set alpha                                   = 1
 
+    set calculate force                         = true
+    set ib force output file                    = spheres_force
+    set ib particles pvd file                   = spheres_data
+
+    set initial refinement                      = 1
+    set refine mesh inside radius factor        = 0
+    set refine mesh outside radius factor       = 2
+
+    set integrate motion                        = false
+    set assemble Navier-Stokes inside particles = false

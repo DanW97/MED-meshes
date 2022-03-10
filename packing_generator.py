@@ -106,14 +106,13 @@ class PackingGenerator():
         """Run LIGGGHTS for each packing script"""
         self.real_phi = np.empty((np.shape(self.setpoints)[0]))
         for i, path in enumerate(self.packingpaths):
-            sim = coexist.LiggghtsSimulation(path, save_vtk="vtk")
+            sim = coexist.LiggghtsSimulation(path)
             pos = sim.positions()
             rad = sim.radii()
             real_phi = sum(4/3*np.pi*rad**3)/(self.Vx*self.Vy*self.Vz*8)
             self.real_phi[i] = real_phi
             self.write_prm(pos, rad, real_phi, i)
             
-
     def write_prm(self, pos, rad, real_phi, suffix):
         """Write Lethe .prm file for each simulation"""
         kinematic_viscosity = 1e-6 #water
@@ -122,45 +121,32 @@ class PackingGenerator():
             header[15] = f"# Volume fraction = {real_phi}, Reynolds number = {self.setpoints[suffix,1]}\n"
             # make box dimensions 10x the packed cube
             L = max([self.Vx, self.Vy, self.Vz])
-            header[106] = f"    set grid arguments                  = 4 : {-L} : {L} : true\n"
-            #calculate inlet flowrate
+            header[106] = f"    set grid arguments                  = 4, 4, 4 : {-2*self.Vx},{-2*self.Vy},{-2*self.Vz} : {2*self.Vx},{2*self.Vy},{2*self.Vz} : true\n"
+            #calculate inlet velocity
             cross_section = self.Vy*self.Vz 
             reynolds_number = self.setpoints[suffix,1]
             hydraulic_diameter = 4*cross_section/(2*(self.Vy + self.Vz))
             inlet_velocity = kinematic_viscosity*reynolds_number/hydraulic_diameter
-            inlet_flowrate = inlet_velocity*cross_section
-            header[205] = f"    set volumetric flow rate    = {inlet_flowrate}\n"
+            header[177] = f"        set Function expression         = {inlet_velocity};0;0;0\n"
+            header[191] = f"          set Function expression = {inlet_velocity}\n"
             # immersed boundary particle generation
             particle_info = []
             particle_write = particle_info.append
             for i, (position, radius) in enumerate(zip(pos, rad)):
-                particle_write(f"    subsection nitsche solid {i}\n")
-                particle_write("        set beta                        = 50\n") #taken from approaching_spheres.prm
-                particle_write("        set enable particles motion     = false\n")
-                particle_write("        set particles sub iterations    = 5\n")
-                particle_write("        set number quadrature points    = 4\n\n")
-                particle_write("        set calculate force on solid    = true\n")
-                particle_write(f"        set solid force name            = solid_force{i}\n")
-                particle_write("        set calculate torque on solid   = true\n")
-                particle_write(f"        set solid force name            = solid_torque{i}\n\n")
-                particle_write("        subsection mesh\n")
-                particle_write("            set type                    = dealii\n")
-                particle_write("            set grid type               = hyper_ball\n")
-                particle_write(f"            set grid arguments          = {position[0]}, {position[1]}, {position[2]} : {radius} : true\n")
-
-                particle_write("            set initial refinement      = 4\n")
-                particle_write("            set simplex                 = false\n")
+                particle_write(f"    subsection particle info {i}\n")
+                particle_write("        set density                             = 1\n") #dummy value since motion is not integrated
+                particle_write("        subsection position\n")
+                particle_write(f"            set Function expression             = {position[0]};{position[1]};{position[2]}\n")
                 particle_write("        end\n")
-                particle_write("    end\n\n")
+                particle_write("        subsection velocity\n")
+                particle_write("            set Function expression             = 0;0;0\n")
+                particle_write("        end\n")
+                particle_write(f"        set radius                              = {radius}\n")
+                particle_write("    end\n")
 
             with open(self.sim_folder + os.sep + self.sim_filename+f"_{suffix}.prm", "w") as sim:
                 sim.writelines(header)
-                sim.writelines("#-------------------------------------------------------------------------------------------------\n")
-                sim.writelines("# Immersed Boundary Particles\n")
-                sim.writelines("#-------------------------------------------------------------------------------------------------\n")
-                sim.writelines("subsection nitsche \n")
-                sim.writelines("    set verbosity                       = verbose \n")
-                sim.writelines(f"    set number of solids                = {len(rad)}\n\n")
+                sim.writelines(f"    set number of particles                     = {np.shape(pos)[0]}\n")
                 sim.writelines(particle_info)
                 sim.writelines("end")
 
