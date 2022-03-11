@@ -34,15 +34,15 @@ class Cylinder:
             Ratio of diamond half-length (half the diagonal length of a square) to cylinder radius
     """
 
-    def __init__(self, radius=49, height=2000, radial_npts=5, height_npts=20, filepath="cylinder", radial_coef=1.0, height_coef=1.0, diamond_coef=1.0, diamond_ratio=0.5) -> None:
+    def __init__(self, radius=0.049, height=2, radial_npts=5, height_npts=20, filepath="cylinder", radial_coef=1.0, height_coef=1.0, diamond_coef=1.0, diamond_ratio=0.5) -> None:
         """Class constructor for Cylinder
 
         Parameters
         ----------
         radius : int, optional
-                Cylinder radius in mm, by default 49
+                Cylinder radius in m, by default 0.049
         height : int, optional
-                Cylinder height in mm, by default 2000
+                Cylinder height in m, by default 2
         radial_npts : int, optional
                 Number of points on transfinite curves in x and y, by default 5
         height_npts : int, optional
