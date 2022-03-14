@@ -118,6 +118,7 @@ class PackingGenerator():
         with open(self.sim_header_file, 'r') as f:
             header = f.readlines()
             header[15] = f"# Volume fraction = {real_phi}, Reynolds number = {self.setpoints[suffix,1]}\n"
+            header[36] = f"    set output path                     = ./results_{suffix}/            # Output directory\n"
             # make box dimensions 10x the packed cube
             L = max([self.Vx, self.Vy, self.Vz])
             header[106] = f"    set grid arguments                  = {-2*self.Vx},{-2*self.Vy},{-2*self.Vz} : {2*self.Vx},{2*self.Vy},{2*self.Vz} : true\n"
