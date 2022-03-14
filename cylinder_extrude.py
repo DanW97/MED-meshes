@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*-coding:utf-8 -*-
+#File    :   packing_generator.py
+#Date    :   03/03/2022
+#Author  :   Daniel Weston
+#Contact :   dtw545@student.bham.ac.uk
+
 import gmsh
 import sys
 
