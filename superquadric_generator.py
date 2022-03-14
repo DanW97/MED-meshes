@@ -1,4 +1,11 @@
-import enum
+#!/usr/bin/env python
+# -*-coding:utf-8 -*-
+#File    :   packing_generator.py
+#Date    :   11/03/2022
+#Author  :   Daniel Weston
+#Contact :   dtw545@student.bham.ac.uk
+
+
 import gmsh
 import numpy as np
 import sys
@@ -11,19 +18,14 @@ VOLUME = 3
 
 # using parameterised functions from: https://en.wikipedia.org/wiki/Superquadrics
 # auxilliary functions
-
-
 def f(w, m):
     return np.sign(np.sin(w))*np.power(np.abs(np.sin(w)), m)
-
 
 def g(w, m):
     return np.sign(np.cos(w))*np.power(np.abs(np.cos(w)), m)
 
 # parameterised functions that return make_points along a superquadric
 # -pi/2<=v<=pi/2, -pi<=u<=pi
-
-
 def xpts(u, v, scaleX, exponentX):
     return scaleX*g(v, 2/exponentX)*g(u, 2/exponentX)
 
@@ -37,8 +39,49 @@ def zpts(v, scaleZ, exponentZ):
 
 
 class Superquadric:
+    """ Class handling the construction, transformation, meshing and export of a superquadric object that has points on:
+        abs(x/A)**r + abs(y/B)**s + abs(z/C)**t = 1
+
+        This class can handle values of r, s, t from 1 and above.
+        
+        Attributes
+        ----------
+        indices : list, optional
+            Exponents used to define superquadric shape, by default [8, 8, 8]
+        scale : list, optional
+            Scale factors used to determine superquadric size in each axis, by default [1, 1, 1]
+        filepath : str, optional
+            Descriptor for saving .geo and .msh files. Extensions are not required as these are set by
+            the export method, by default 'quad'
+        rotation : list, optional
+            Rotations about the x, y and z asix, respectively. These are in DEGREES and converted into 
+            radians by the rotate method, by default [0, 0, 0]
+        npts : int, optional
+            Number of points used to draw splines representing the superquadric, by default 20
+        gr : int, optional
+            Mesh size at each point, by default 1
+    """
     def __init__(self, indices=[8, 8, 8], scale=[1, 1, 1],
                  filepath='quad', rotation=[0, 0, 0], npts = 20, gr = 1) -> None:
+        """Constructor for superquadric mesh
+
+        Parameters
+        ----------
+        indices : list, optional
+            Exponents used to define superquadric shape, by default [8, 8, 8]
+        scale : list, optional
+            Scale factors used to determine superquadric size in each axis, by default [1, 1, 1]
+        filepath : str, optional
+            Descriptor for saving .geo and .msh files. Extensions are not required as these are set by
+            the export method, by default 'quad'
+        rotation : list, optional
+            Rotations about the x, y and z asix, respectively. These are in DEGREES and converted into 
+            radians by the rotate method, by default [0, 0, 0]
+        npts : int, optional
+            Number of points used to draw splines representing the superquadric, by default 20
+        gr : int, optional
+            Mesh size at each point, by default 1
+        """
         # checking
         assert len(scale) == 3
         assert len(rotation) == 3
@@ -55,21 +98,20 @@ class Superquadric:
         self.vmin = 0
         self.vmax = np.pi/2
         self.filepath = filepath
-        self.shell = np.max(scale) + 2.5
         self.npts = npts
         self.gr = gr
 
     def draw(self):
-        """Draw the superquadric object carved out of a box.
+        """Draw the superquadric object.
 
-        Construct 1/8 of the object, and form the rest by copies. The section
-        drawn is in the domain {x>0, y>0, z>0}
+        Points are generated utilising the parameterised functions at the top of this file.
 
         The following conventions are used to define the orientation of the splines
         formed:
         1) N - the vertical spline parallel with x
         2) E - the vertical spline parallel with y
         3) NE - the horizontal spline parallel to the xy plane
+        ... etc
         """
         gmsh.initialize(sys.argv)
         gmsh.model.add("Superquadric")
@@ -159,7 +201,7 @@ class Superquadric:
         NEspline_pts[0] = Nspline_pts[0] #it finishes at the start of the north spline    
         NEspline_pts[-1] = Espline_pts[0] #it finishes at the start of the east spline
         NEspline = gm.addSpline(NEspline_pts)
-        """# East -> South spline
+        # East -> South spline
         ESspline_pts = [] #it starts from the end of the north spline
         pts_append = ESspline_pts.append
         for i, (x, y, z) in enumerate(zip(xES, yES, zES)):
@@ -214,94 +256,89 @@ class Superquadric:
             pts_append(gm.addPoint(x,y,-z,self.gr))
         Wspline_pts_lower[0] = SWspline_pts[-1]
         Wspline_pts_lower[-1] = Nspline_pts_lower[-1] #this spline ends at the start of Nspline
-        Wspline_lower = gm.addSpline(Wspline_pts_lower) """
+        Wspline_lower = gm.addSpline(Wspline_pts_lower)
         # Draw faces
         curve_loopNE = gm.addCurveLoop([-Nspline,NEspline,Espline])
         NEface = gm.addSurfaceFilling([curve_loopNE])
-        #curve_loopES = gm.addCurveLoop([-Espline,ESspline,Sspline])
-        #ESface = gm.addSurfaceFilling([curve_loopES])
-        #curve_loopSW = gm.addCurveLoop([-Sspline,SWspline,Wspline])
-        #SWface = gm.addSurfaceFilling([curve_loopSW])
-        #curve_loopWN = gm.addCurveLoop([-Wspline,WNspline,Nspline])
-        #WNface = gm.addSurfaceFilling([curve_loopWN])
-        #curve_loopNE_lower = gm.addCurveLoop([-Nspline_lower,NEspline,Espline_lower], reorient=True)
-        #NEface_lower = gm.addSurfaceFilling([curve_loopNE_lower])
-        #curve_loopES_lower = gm.addCurveLoop([-Espline_lower,ESspline,Sspline_lower], reorient=True)
-        #ESface_lower = gm.addSurfaceFilling([curve_loopES_lower])
-        #curve_loopSW_lower = gm.addCurveLoop([-Sspline_lower,SWspline,Wspline_lower], reorient=True)
-        #SWface_lower = gm.addSurfaceFilling([curve_loopSW_lower])
-        #curve_loopWN_lower = gm.addCurveLoop([-Wspline_lower,WNspline,Nspline_lower], reorient=True)
-        #WNface_lower = gm.addSurfaceFilling([curve_loopWN_lower])
-        #sl1 = gm.addSurfaceLoop([NEface,NEface_lower,ESface,ESface_lower,SWface,SWface_lower,WNface,WNface_lower])
-        sl1 = gm.addSurfaceLoop([NEface])
+        curve_loopES = gm.addCurveLoop([-Espline,ESspline,Sspline])
+        ESface = gm.addSurfaceFilling([curve_loopES])
+        curve_loopSW = gm.addCurveLoop([-Sspline,SWspline,Wspline])
+        SWface = gm.addSurfaceFilling([curve_loopSW])
+        curve_loopWN = gm.addCurveLoop([-Wspline,WNspline,Nspline])
+        WNface = gm.addSurfaceFilling([curve_loopWN])
+        curve_loopNE_lower = gm.addCurveLoop([-Nspline_lower,NEspline,Espline_lower], reorient=True)
+        NEface_lower = gm.addSurfaceFilling([curve_loopNE_lower])
+        curve_loopES_lower = gm.addCurveLoop([-Espline_lower,ESspline,Sspline_lower], reorient=True)
+        ESface_lower = gm.addSurfaceFilling([curve_loopES_lower])
+        curve_loopSW_lower = gm.addCurveLoop([-Sspline_lower,SWspline,Wspline_lower], reorient=True)
+        SWface_lower = gm.addSurfaceFilling([curve_loopSW_lower])
+        curve_loopWN_lower = gm.addCurveLoop([-Wspline_lower,WNspline,Nspline_lower], reorient=True)
+        WNface_lower = gm.addSurfaceFilling([curve_loopWN_lower])
+        sl1 = gm.addSurfaceLoop([NEface,NEface_lower,ESface,ESface_lower,SWface,SWface_lower,WNface,WNface_lower])
         v1 = gm.addVolume([sl1])
+        # Apply any rotations requested
+        if self.rotatable:
+            self.rotate(v1)
         gm.addPhysicalGroup(VOLUME, [v1])
-        # Carve shape out of box defined by P1 = (-shell, -shell, -shell), P2 = (shell, shell, shell)
-        """x = self.shell 
-        y = self.shell 
-        z = self.shell
-        box = np.array([
-            [-x, -y,  z], #(1) -x -y  z
-            [-x, -y, -z], #(2) -x -y -z
-            [-x,  y,  z], #(3) -x  y  z
-            [-x,  y, -z], #(4) -x  y -z
-            [ x, -y,  z], #(5)  x -y  z
-            [ x, -y, -z], #(6)  x -y -z
-            [ x,  y,  z], #(7)  x  y  z
-            [ x,  y, -z], #(8)  x  y -z
-            ])
-        points = []
-        for pos in box:
-            points.append(gm.addPoint(pos[0], pos[1], pos[2], self.gr))
-        l1 = gm.addLine(points[0], points[1])
-        l2 = gm.addLine(points[0], points[2])
-        l3 = gm.addLine(points[0], points[4])
-        l4 = gm.addLine(points[1], points[3])
-        l5 = gm.addLine(points[1], points[5])
-        l6 = gm.addLine(points[2], points[6])
-        l7 = gm.addLine(points[2], points[3])
-        l8 = gm.addLine(points[3], points[7])
-        l9 = gm.addLine(points[4], points[5])
-        l10 = gm.addLine(points[4], points[6])
-        l11 = gm.addLine(points[5], points[7])
-        l12 = gm.addLine(points[6], points[7])
-        c1 = gm.add_curve_loop([l1,l4,-l7,-l2])
-        c2 = gm.add_curve_loop([l5,l11,-l8,-l4]) 
-        c3 = gm.add_curve_loop([-l9,l10,l12,-l11]) 
-        c4 = gm.add_curve_loop([-l3,l2,l6,-l10]) 
-        c5 = gm.add_curve_loop([l9,-l5,-l1,l3]) 
-        c6 = gm.add_curve_loop([l7,l8,-l12,-l6])
-        s1 = gm.add_surface_filling([c1])
-        s2 = gm.add_surface_filling([c2])
-        s3 = gm.add_surface_filling([c3])
-        s4 = gm.add_surface_filling([c4])
-        s5 = gm.add_surface_filling([c5])
-        s6 = gm.add_surface_filling([c6])
-        sl1 = gm.add_surface_loop([s1, s2, s3, s4, s5, s6])
-        v1 = gm.add_volume([sl1, superquadric])
         gm.synchronize()
-        gr1 = gm.addPhysicalGroup(
-            SURFACE, [s1])
-        gr2 = gm.addPhysicalGroup(
-            SURFACE, [s3])
-        gr3 = gm.addPhysicalGroup(
-            SURFACE, [s2, s4, s5, s6])
-        
-        gr4 = gm.addPhysicalGroup(
-            VOLUME, [v1]) """
-        
-        gm.synchronize()
-        
         self.export()
 
-    def export(self):
-        """unclean way to add all the hard-coded stuff in, and rename the file"""
+    def rotate(self, volume):
+        """Perform rotations around each axis as requested
+           
+           Parameters
+           ----------
+           volume : int
+                Tag for the quadric volume. This is automatically populated by the call to rotate within self.draw().
+
+           Notes
+           -----
+           Angles are in DEGREES and converted within this method."""
+        # origin points
+        x0 = 0
+        y0 = 0
+        z0 = 0
+        gm = gmsh.model.geo
+        for dim, angle in enumerate(self.rotation):
+            # default axis values
+            ax = 0
+            ay = 0
+            az = 0
+            if dim == 0 and angle != 0: #rotate around x-axis
+                ax = 1
+                gm.rotate([(VOLUME, volume)],x0,y0,z0,ax,ay,az,angle*np.pi/180)
+            elif dim == 1 and angle != 0: #rotate around y-axis
+                ay = 1
+                gm.rotate([(VOLUME, volume)],x0,y0,z0,ax,ay,az,angle*np.pi/180)
+            elif dim == 2 and angle != 0: #rotate around z-axis
+                az = 1
+                gm.rotate([(VOLUME, volume)],x0,y0,z0,ax,ay,az,angle*np.pi/180)
+
+    def export(self, order = 1, refine_passes = 3):
+        """Export .msh and .geo_unrolled (converted to .geo manually) files. 
+        
+           Assign order to mesh and go through refine_passes number of calls to
+           GMSH's 'refine by splitting' functionality. At each stage, NETGEN 3D
+           optimisation is requested to optimise the 3D mesh
+           
+           Parameters
+           ----------
+           order : int, optional
+                Mesh order, acceptable values are 1, 2 or 3, by default 1
+           refine_passes : int, optional
+                Number of passes through gmsh.model.mesh.refine() that the mesh goes
+                through, by default 3
+           """
+        msh = gmsh.model.mesh
         gmsh.model.geo.synchronize()
         raw_file = f"{self.filepath}.geo_unrolled"
         new_file = f"{self.filepath}.geo"
         gmsh.write(raw_file)
-        gmsh.model.mesh.setOrder(3)
-        gmsh.model.mesh.generate(VOLUME)
+        msh.generate(VOLUME)
+        msh.setOrder(order)
+        for _ in range(refine_passes):
+            msh.refine()
+            msh.optimize("Netgen")
         gmsh.model.geo.synchronize()
         gmsh.write(f"{self.filepath}.msh")
         import os

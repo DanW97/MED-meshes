@@ -112,8 +112,8 @@ subsection mesh
     # Automatically generate mesh using deal.II's functions:
     # https://www.dealii.org/current/doxygen/deal.II/namespaceGridGenerator.html
     set type                            = dealii
-    set grid type = hyper_rectangle
-    set grid arguments = -2, -2, -2 : 2, 2, 2 : true ###
+    set grid type = subdivided_hyper_rectangle
+    set grid arguments = 3,3,3: -5, -5, -5 : 5, 5, 5 : true ###
     set initial refinement = 3
 
     
