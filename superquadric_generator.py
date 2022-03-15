@@ -9,6 +9,7 @@
 import gmsh
 import numpy as np
 import sys
+import platform
 
 # Global constants - these form the "dim" section of the dimtag parlance used in gmsh
 POINT = 0
@@ -336,9 +337,13 @@ class Superquadric:
         gmsh.write(raw_file)
         msh.generate(VOLUME)
         msh.setOrder(order)
+        if platform.system() == 'Windows':
+            optimiser = ''
+        else:
+            optimiser = 'Netgen'
         for _ in range(refine_passes):
             msh.refine()
-            msh.optimize("Netgen")
+            msh.optimize(optimiser)
         gmsh.model.geo.synchronize()
         gmsh.write(f"{self.filepath}.msh")
         import os
