@@ -200,36 +200,36 @@ class Superquadric:
         Wspline_pts[-1] = Nspline_pts[-1] #this spline ends at the start of Nspline
         Wspline = gm.addSpline(Wspline_pts) 
         # North -> East spline
-        NEspline_pts = [] #it starts from the end of the north spline
+        NEspline_pts = [] 
         pts_append = NEspline_pts.append
         for i, (x, y, z) in enumerate(zip(xNE, yNE, zNE)):
             pts_append(gm.addPoint(x,y,z,self.gr))
-        NEspline_pts[0] = Nspline_pts[0] #it finishes at the start of the north spline    
+        NEspline_pts[0] = Nspline_pts[0] #it starts at the start of the north spline    
         NEspline_pts[-1] = Espline_pts[0] #it finishes at the start of the east spline
         NEspline = gm.addSpline(NEspline_pts)
         # East -> South spline
-        ESspline_pts = [] #it starts from the end of the north spline
+        ESspline_pts = [] 
         pts_append = ESspline_pts.append
         for i, (x, y, z) in enumerate(zip(xES, yES, zES)):
             pts_append(gm.addPoint(x,y,z,self.gr))
-        ESspline_pts[0] = Espline_pts[0] #it finishes at the start of the north spline    
-        ESspline_pts[-1] = Sspline_pts[0] #it finishes at the start of the east spline
+        ESspline_pts[0] = Espline_pts[0] #it starts at the start of the east spline    
+        ESspline_pts[-1] = Sspline_pts[0] #it finishes at the start of the south spline
         ESspline = gm.addSpline(ESspline_pts)
         # South -> West spline
-        SWspline_pts = [] #it starts from the end of the north spline
+        SWspline_pts = [] 
         pts_append = SWspline_pts.append
         for i, (x, y, z) in enumerate(zip(xSW, ySW, zSW)):
             pts_append(gm.addPoint(x,y,z,self.gr))
-        SWspline_pts[0] = Sspline_pts[0] #it finishes at the start of the north spline    
-        SWspline_pts[-1] = Wspline_pts[0] #it finishes at the start of the east spline
+        SWspline_pts[0] = Sspline_pts[0] #it starts at the start of the south spline    
+        SWspline_pts[-1] = Wspline_pts[0] #it finishes at the start of the west spline
         SWspline = gm.addSpline(SWspline_pts)
         # West -> North spline
-        WNspline_pts = [] #it starts from the end of the north spline
+        WNspline_pts = [] 
         pts_append = WNspline_pts.append
         for i, (x, y, z) in enumerate(zip(xWN, yWN, zWN)):
             pts_append(gm.addPoint(x,y,z,self.gr))
-        WNspline_pts[0] = Wspline_pts[0] #it finishes at the start of the north spline    
-        WNspline_pts[-1] = Nspline_pts[0] #it finishes at the start of the east spline
+        WNspline_pts[0] = Wspline_pts[0] #it starts at the start of the west spline    
+        WNspline_pts[-1] = Nspline_pts[0] #it finishes at the start of the north spline
         WNspline = gm.addSpline(WNspline_pts)
         # Draw lower splines
         # North spline
@@ -244,24 +244,24 @@ class Superquadric:
         pts_append = Espline_pts_lower.append
         for i, (x, y, z) in enumerate(zip(xE, yE, zE)):
             pts_append(gm.addPoint(x,y,-z,self.gr))
-        Espline_pts_lower[0] = NEspline_pts[-1]
-        Espline_pts_lower[-1] = Nspline_pts_lower[-1] #this spline ends at the start of Nspline
+        Espline_pts_lower[0] = NEspline_pts[-1]       #this spline starts at the end of NEspline
+        Espline_pts_lower[-1] = Nspline_pts_lower[-1] #this spline ends at the end of lower Nspline
         Espline_lower = gm.addSpline(Espline_pts_lower) 
         # South spline
         Sspline_pts_lower = []
         pts_append = Sspline_pts_lower.append
         for i, (x, y, z) in enumerate(zip(xS, yS, zS)):
             pts_append(gm.addPoint(x,y,-z,self.gr))
-        Sspline_pts_lower[0] = ESspline_pts[-1]
-        Sspline_pts_lower[-1] = Nspline_pts_lower[-1] #this spline ends at the start of Nspline
+        Sspline_pts_lower[0] = ESspline_pts[-1]       #this spline starts at the end of ESspline
+        Sspline_pts_lower[-1] = Nspline_pts_lower[-1] #this spline ends at the end of lower Nspline
         Sspline_lower = gm.addSpline(Sspline_pts_lower)
         # West spline
         Wspline_pts_lower = [] 
         pts_append = Wspline_pts_lower.append
         for i, (x, y, z) in enumerate(zip(xW, yW, zW)):
             pts_append(gm.addPoint(x,y,-z,self.gr))
-        Wspline_pts_lower[0] = SWspline_pts[-1]
-        Wspline_pts_lower[-1] = Nspline_pts_lower[-1] #this spline ends at the start of Nspline
+        Wspline_pts_lower[0] = SWspline_pts[-1]       #this spline starts at the end of SWspline
+        Wspline_pts_lower[-1] = Nspline_pts_lower[-1] #this spline ends at the end of lower Nspline
         Wspline_lower = gm.addSpline(Wspline_pts_lower)
         # Draw faces
         curve_loopNE = gm.addCurveLoop([-Nspline,NEspline,Espline])
@@ -284,11 +284,49 @@ class Superquadric:
         v1 = gm.addVolume([sl1])
         # Apply any rotations requested
         if self.rotatable:
-            self.rotate(v1)
+            self._rotate(v1)
         gm.addPhysicalGroup(VOLUME, [v1])
         gm.synchronize()
 
-    def rotate(self, volume):
+
+    def export(self, order = 1, refine_passes = 3, optimiser = ''):
+        """Export .msh and .geo_unrolled (converted to .geo manually) files. 
+        
+           Assign order to mesh and go through refine_passes number of calls to
+           GMSH's 'refine by splitting' functionality. At each stage, GMSH's
+           optimisation is requested to optimise the 3D mesh
+           
+           Parameters
+           ----------
+           order : int, optional
+                Mesh order, acceptable values are 1, 2 or 3, by default 1
+           refine_passes : int, optional
+                Number of passes through gmsh.model.mesh.refine() that the mesh goes
+                through, by default 3
+           optimiser : string, optional
+                Optimiser used by GMSH after each refinement pass, by default is '', 
+                which uses the default GMSH optimiser
+           """
+        msh = gmsh.model.mesh
+        gmsh.model.geo.synchronize()
+        raw_file = f"{self.filepath}.geo_unrolled"
+        new_file = f"{self.filepath}.geo"
+        gmsh.write(raw_file)
+        msh.generate(VOLUME)
+        msh.setOrder(order)
+        for _ in range(refine_passes):
+            msh.refine()
+            msh.optimize(optimiser)
+        gmsh.model.geo.synchronize()
+        gmsh.write(f"{self.filepath}.msh")
+        import os
+        os.system(f"mv {raw_file} {new_file}")
+        if not self.view:
+            gmsh.finalize()
+        else:
+            self._view_mesh()
+
+    def _rotate(self, volume):
         """Perform rotations around each axis as requested
            
            Parameters
@@ -318,45 +356,6 @@ class Superquadric:
             elif dim == 2 and angle != 0: #rotate around z-axis
                 az = 1
                 gm.rotate([(VOLUME, volume)],x0,y0,z0,ax,ay,az,angle*np.pi/180)
-
-    def export(self, order = 1, refine_passes = 3):
-        """Export .msh and .geo_unrolled (converted to .geo manually) files. 
-        
-           Assign order to mesh and go through refine_passes number of calls to
-           GMSH's 'refine by splitting' functionality. At each stage, NETGEN 3D
-           optimisation is requested to optimise the 3D mesh
-           
-           Parameters
-           ----------
-           order : int, optional
-                Mesh order, acceptable values are 1, 2 or 3, by default 1
-           refine_passes : int, optional
-                Number of passes through gmsh.model.mesh.refine() that the mesh goes
-                through, by default 3
-           """
-        msh = gmsh.model.mesh
-        gmsh.model.geo.synchronize()
-        raw_file = f"{self.filepath}.geo_unrolled"
-        new_file = f"{self.filepath}.geo"
-        gmsh.write(raw_file)
-        msh.generate(VOLUME)
-        msh.setOrder(order)
-        if platform.system() == 'Windows':
-            optimiser = ''
-        else:
-            optimiser = 'Netgen'
-        for _ in range(refine_passes):
-            msh.refine()
-            msh.optimize(optimiser)
-        gmsh.model.geo.synchronize()
-        gmsh.write(f"{self.filepath}.msh")
-        import os
-        os.system(f"mv {raw_file} {new_file}")
-        if not self.view:
-            gmsh.finalize()
-        else:
-            self._view_mesh()
-
 
     def _view_mesh(self):
         """Visualise the mesh file"""
