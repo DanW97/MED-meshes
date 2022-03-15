@@ -45,7 +45,7 @@ end
 # Simulation Checkpointing
 #-------------------------------------------------------------------------------------------------
 subsection restart
-    set checkpoint                      = true                  # Enable checkpointing
+    set checkpoint                      = false                 # Disable checkpointing as this has issues with the particles used
     set restart                         = false                 # Start from previous checkpoint
     set filename                        = restart
     set frequency                       = 10
