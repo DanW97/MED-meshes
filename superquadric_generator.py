@@ -61,9 +61,11 @@ class Superquadric:
             Number of points used to draw splines representing the superquadric, by default 20
         gr : int, optional
             Mesh size at each point, by default 1
+        view : bool, optional
+            Boolean to check whether the mesh is visualised, by default False
     """
     def __init__(self, indices=[8, 8, 8], scale=[1, 1, 1],
-                 filepath='quad', rotation=[0, 0, 0], npts = 20, gr = 1) -> None:
+                 filepath='quad', rotation=[0, 0, 0], npts = 20, gr = 1, view = False) -> None:
         """Constructor for superquadric mesh
 
         Parameters
@@ -82,6 +84,8 @@ class Superquadric:
             Number of points used to draw splines representing the superquadric, by default 20
         gr : int, optional
             Mesh size at each point, by default 1
+        view : bool, optional
+            Boolean to check whether the mesh is visualised, by default False
         """
         # checking
         assert len(scale) == 3
@@ -101,6 +105,7 @@ class Superquadric:
         self.filepath = filepath
         self.npts = npts
         self.gr = gr
+        self.view = view
 
     def draw(self):
         """Draw the superquadric object.
@@ -282,7 +287,6 @@ class Superquadric:
             self.rotate(v1)
         gm.addPhysicalGroup(VOLUME, [v1])
         gm.synchronize()
-        self.export()
 
     def rotate(self, volume):
         """Perform rotations around each axis as requested
@@ -348,12 +352,18 @@ class Superquadric:
         gmsh.write(f"{self.filepath}.msh")
         import os
         os.system(f"mv {raw_file} {new_file}")
+        if not self.view:
+            gmsh.finalize()
+        else:
+            self._view_mesh()
 
-    def view(self):
-        """Visualise the geo file"""
+
+    def _view_mesh(self):
+        """Visualise the mesh file"""
         if '-nopopup' not in sys.argv:
             gmsh.fltk.run()
+        gmsh.finalize()
 
 quad = Superquadric()
 quad.draw()
-quad.view()
+quad.export()
